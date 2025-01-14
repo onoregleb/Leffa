@@ -6,13 +6,10 @@ import numpy as np
 from PIL import Image
 from app import LeffaPredictor
 
-# Инициализация FastAPI приложения
 app = FastAPI()
 
-# Глобальный объект предиктора
 leffa_predictor = None
 
-# Функция lifespan для инициализации весов моделей
 @app.on_event("startup")
 async def startup_event():
     global leffa_predictor
@@ -48,7 +45,6 @@ async def virtual_tryon(
     if leffa_predictor is None:
         raise HTTPException(status_code=500, detail="Модель не инициализирована.")
 
-    # Сохранение загруженных изображений во временные файлы
     try:
         with NamedTemporaryFile(delete=False, suffix=".jpg") as temp_src_file:
             shutil.copyfileobj(src_image.file, temp_src_file)
@@ -58,7 +54,6 @@ async def virtual_tryon(
             shutil.copyfileobj(ref_image.file, temp_ref_file)
             ref_image_path = temp_ref_file.name
 
-        # Выполнение предсказания
         generated_image, _, _ = leffa_predictor.leffa_predict(
             src_image_path=src_image_path,
             ref_image_path=ref_image_path,
@@ -70,7 +65,6 @@ async def virtual_tryon(
             vt_garment_type=vt_garment_type,
         )
 
-        # Сохранение сгенерированного изображения
         with NamedTemporaryFile(delete=False, suffix=".jpg") as temp_out_file:
             output_image = Image.fromarray(generated_image)
             output_image.save(temp_out_file.name)
@@ -79,6 +73,5 @@ async def virtual_tryon(
         return FileResponse(output_path, media_type="image/jpeg")
 
     finally:
-        # Закрытие файлов
         src_image.file.close()
         ref_image.file.close()
