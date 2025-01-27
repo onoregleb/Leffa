@@ -5,15 +5,21 @@ import shutil
 import numpy as np
 from PIL import Image
 from app import LeffaPredictor
+from contextlib import asynccontextmanager
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global leffa_predictor
+    print("Initializing Leffa Predictor...")
+    leffa_predictor = LeffaPredictor()
+    print("Leffa Predictor initialized.")
+    yield
+    print("Shutting down Leffa Predictor...")
+
+app = FastAPI(lifespan=lifespan)
 
 leffa_predictor = None
-
-@app.on_event("startup")
-async def startup_event():
-    global leffa_predictor
-    leffa_predictor = LeffaPredictor()
 
 @app.post("/virtual-tryon/")
 async def virtual_tryon(
@@ -75,3 +81,9 @@ async def virtual_tryon(
     finally:
         src_image.file.close()
         ref_image.file.close()
+
+
+@app.get("/health")
+async def health_check():
+    return {"status": "ok"}
+
